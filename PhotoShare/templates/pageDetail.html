@@ -29,9 +29,8 @@
                 </div>
             </section>
             -->
-            {% for comment in image.comments %}
-            {% if loop.index > 10 %}{% break %}{% endif %}
-            <ul class="discuss-list">
+            <ul class="discuss-list js-discuss-list">
+                {% for comment in comments %}
                 <li>
                     <!-- <a class=" icon-remove" title="删除评论"></a> -->
                     <a class="_4zhc5 _iqaka" title="{{comment.user.username}}" href="/profile/{{comment.user.id}}" data-reactid="{{comment.id}}">{{comment.user.username}}</a>
@@ -39,16 +38,27 @@
                         <span>{{comment.content}}</span>
                     </span>
                 </li>
+                {% endfor %}
             </ul>
-            {% endfor %}
             <section class="discuss-edit">
                 <a class="icon-heart-empty"></a>
                 <form>
-                    <input placeholder="添加评论..." type="text">
+                    <input placeholder="添加评论..." id="jsCmt" type="text">
                 </form>
-                <button class="more-info">更多选项</button>
+                {% if current_user.is_authenticated %}
+                <button class="more-info" id="jsSubmit">更多选项</button>
+                {% else %}
+                <button class="more-info" onclick="window.location.href='/reglogin'">更多选项</button>
+                {% endif %}
             </section>
         </div>
     </article>
 </div>
+{% endblock%}
+{% block js %}
+<script type="text/javascript">
+    window.imageId ={{image.id}};
+</script>
+<script type="text/javascript" src="/static/js/jquery.js"></script>
+<script type="text/javascript" src="/static/js/detail.js"></script>
 {% endblock%}

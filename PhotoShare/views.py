@@ -5,6 +5,8 @@ import random
 import hashlib
 from flask_login import login_user, logout_user, login_required, current_user
 import json
+from PhotoShare import qiniusdk
+import uuid
 
 
 @app.route('/')
@@ -37,7 +39,8 @@ def image(image_id):
     image = Image.query.get(image_id)
     if image == None:
         return redirect('/')
-    return render_template('pageDetail.html', image=image)
+    comments = Comment.query.filter_by(image_id=image_id).order_by(db.desc(Comment.id)).limit(20).all()
+    return render_template('pageDetail.html', image=image, comments=comments)
 
 
 @app.route('/profile/<int:user_id>/')
@@ -123,6 +126,42 @@ def login():
     return redirect('/')
 
 
-@app.route('/upload/', method=['post'])
+@app.route('/logout/')
+def logout():
+    logout_user()
+    return redirect('/')
+
+
+@app.route('/upload/', methods=['post'])
+@login_required
 def upload():
+    file = request.files['file']
+    # http://werkzeug.pocoo.org/docs/0.10/datastructures/
+    # 需要对文件进行裁剪等操作
+    file_ext = ''
+    if file.filename.find('.') > 0:
+        file_ext = file.filename.rsplit('.', 1)[1].strip().lower()
+    if file_ext in app.config['ALLOWED_EXT']:
+        file_name = str(uuid.uuid1()).replace('-', '') + '.' + file_ext
+        url = qiniusdk.qiniu_upload_file(file, file_name)
+        if url != None:
+            db.session.add(Image(url, current_user.id))
+            db.session.commit()
+
+    return redirect('/profile/%d' % current_user.id)
+
+
+@app.route('/addcomment/', methods=['post'])
+@login_required
+def add_comment():
+    image_id = int(request.values['image_id'])
+    content = request.values['content']
+    comment = Comment(content, current_user.id, image_id)
+    db.session.add(comment)
+    db.session.commit()
+    return json.dumps({"code":0, "id":comment.id,
+                       "content":comment.content,
+                       "username":comment.user.username,
+                       "user_id":comment.user_id})
+
 

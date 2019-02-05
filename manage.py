@@ -3,6 +3,7 @@ from flask_script import Manager
 from PhotoShare.models import User, Image, Comment
 import random
 from sqlalchemy import or_, and_
+import unittest
 
 manager = Manager(app)
 
@@ -42,7 +43,21 @@ def add_image():
 
 @manager.command
 def test():
-    print(User.query.get(5))
+    print(Image.query.filter_by(user_id=101).first())
+
+
+@manager.command
+def delete_image():
+    img = Image.query.filter_by(user_id=101).first()
+    db.session.delete(img)
+    db.session.commit()
+
+@manager.command
+def run_test():
+    db.drop_all()
+    db.create_all()
+    tests = unittest.TestLoader().discover('./')
+    unittest.TextTestRunner().run(tests)
 
 
 if __name__ == '__main__':
